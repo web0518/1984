@@ -79,16 +79,24 @@
       calculateTime();
     }
 
-    function calculateTime() {
-      const flowRate = parseFloat(flowRateInput.value);
+   function calculateTime() {
+  const flowRate = parseFloat(flowRateInput.value);
 
-      if (!isNaN(flowRate) && flowRate > 0 && oxygenVolume > 0) {
-        const time = oxygenVolume / flowRate;
-        timeResult.textContent = `使用可能時間 (分): ${time.toFixed(2)} 分`;
-      } else {
-        timeResult.textContent = "使用可能時間 (分): -";
-      }
-    }
+  if (!isNaN(flowRate) && flowRate > 0 && oxygenVolume > 0) {
+    const timeInMinutes = oxygenVolume / flowRate;
+    const hours = Math.floor(timeInMinutes / 60);
+    const minutes = Math.floor(timeInMinutes % 60);
+
+    const total = Math.floor(timeInMinutes);  // 小数切り捨てで合計分表示
+    let timeString = "";
+    if (hours > 0) timeString += `${hours} 時間 `;
+    timeString += `${minutes} 分（${total} 分）`;
+
+    timeResult.textContent = `使用可能時間: ${timeString}`;
+  } else {
+    timeResult.textContent = "使用可能時間: -";
+  }
+}
 
     capacitySelect.addEventListener('change', calculateOxygenVolume);
     pressureInput.addEventListener('input', calculateOxygenVolume);
