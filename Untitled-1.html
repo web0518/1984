@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>酸素残量＆使用可能時間計算機</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f0f8ff;
+    }
+    label, input, select {
+      display: block;
+      margin: 10px 0;
+    }
+    input[type="number"], select {
+      width: 90%;
+      padding: 8px;
+      font-size: 1em;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #333;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>酸素残量＆使用可能時間 計算機</h1>
+
+  <label for="capacity">ボンベ容量 (L):</label>
+  <select id="capacity">
+    <option value="0">選択してください</option>
+    <option value="2.1">2.1 L</option>
+    <option value="2.5">2.5 L</option>
+    <option value="3.0">3.0 L</option>
+  </select>
+
+  <label for="pressure">圧力計の数値 (MPa):</label>
+  <input type="number" id="pressure" step="0.1" min="0">
+
+  <div class="result" id="oxygenResult">酸素残量 (L): -</div>
+
+  <label for="flowRate">使用流量 (L/分):</label>
+  <input type="number" id="flowRate" step="0.1" min="0">
+
+  <div class="result" id="timeResult">使用可能時間 (分): -</div>
+
+  <script>
+    // LIFF初期化
+    async function main() {
+      await liff.init({ liffId: "YOUR_LIFF_ID" }); // ← あなたの LIFF ID をここに挿入
+    }
+    main();
+
+    // 計算ロジック
+    const capacitySelect = document.getElementById('capacity');
+    const pressureInput = document.getElementById('pressure');
+    const flowRateInput = document.getElementById('flowRate');
+    const oxygenResult = document.getElementById('oxygenResult');
+    const timeResult = document.getElementById('timeResult');
+
+    let oxygenVolume = 0;
+
+    function calculateOxygenVolume() {
+      const capacity = parseFloat(capacitySelect.value);
+      const pressure = parseFloat(pressureInput.value);
+
+      if (!isNaN(capacity) && capacity > 0 && !isNaN(pressure)) {
+        oxygenVolume = capacity * pressure * 10;
+        oxygenResult.textContent = `酸素残量 (L): ${oxygenVolume.toFixed(2)} L`;
+      } else {
+        oxygenVolume = 0;
+        oxygenResult.textContent = "酸素残量 (L): -";
+      }
+      calculateTime();
+    }
+
+    function calculateTime() {
+      const flowRate = parseFloat(flowRateInput.value);
+
+      if (!isNaN(flowRate) && flowRate > 0 && oxygenVolume > 0) {
+        const time = oxygenVolume / flowRate;
+        timeResult.textContent = `使用可能時間 (分): ${time.toFixed(2)} 分`;
+      } else {
+        timeResult.textContent = "使用可能時間 (分): -";
+      }
+    }
+
+    capacitySelect.addEventListener('change', calculateOxygenVolume);
+    pressureInput.addEventListener('input', calculateOxygenVolume);
+    flowRateInput.addEventListener('input', calculateTime);
+  </script>
+</body>
+</html>
