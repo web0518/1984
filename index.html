@@ -6,57 +6,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
+    :root {
+      --bg-color: #f9f9f9;
+      --primary: #0071e3;
+      --text-color: #1d1d1f;
+      --card-bg: white;
+      --radius: 12px;
+      --shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f0f8ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-    label, input, select {
-      display: block;
-      margin: 10px 0;
-    }
-    input[type="number"], select {
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 40px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 400px;
       width: 90%;
-      padding: 8px;
-      font-size: 1em;
     }
-    .result {
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    label {
+      font-weight: 500;
       margin-top: 20px;
-      font-size: 1.2em;
-      color: #333;
-      font-weight: bold;
+      display: block;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 1.1em;
+      font-weight: 600;
+      color: var(--text-color);
+      background: #f1f1f1;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+    }
+
+    button {
+      margin-top: 30px;
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      font-size: 1em;
+      font-weight: 600;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>酸素残量＆使用可能時間 計算機</h1>
+  <div class="container">
+    <h1>酸素残量＆使用可能時間</h1>
 
-  <label for="capacity">ボンベ容量 (L):</label>
-  <select id="capacity">
-    <option value="0">選択してください</option>
-    <option value="2.1">2.1 L</option>
-    <option value="2.5">2.5 L</option>
-    <option value="3.0">3.0 L</option>
-  </select>
+    <label for="capacity">ボンベ容量 (L)</label>
+    <select id="capacity">
+      <option value="0">選択してください</option>
+      <option value="2.1">2.1 L</option>
+      <option value="2.5">2.5 L</option>
+      <option value="3.0">3.0 L</option>
+    </select>
 
-  <label for="pressure">圧力計の数値 (MPa):</label>
-  <input type="number" id="pressure" step="0.1" min="0">
+    <label for="pressure">圧力計の数値 (MPa)</label>
+    <input type="number" id="pressure" step="0.1" min="0">
 
-  <div class="result" id="oxygenResult">酸素残量 (L): -</div>
+    <div class="result" id="oxygenResult">酸素残量 (L): -</div>
 
-  <label for="flowRate">使用流量 (L/分):</label>
-  <input type="number" id="flowRate" step="0.1" min="0">
+    <label for="flowRate">使用流量 (L/分)</label>
+    <input type="number" id="flowRate" step="0.1" min="0">
 
-  <div class="result" id="timeResult">使用可能時間 (分): -</div>
+    <div class="result" id="timeResult">使用可能時間: -</div>
+
+    <button onclick="sendDataToSheet()">スプレッドシートに保存</button>
+  </div>
 
   <script>
-    // LIFF初期化
     async function main() {
-      await liff.init({ liffId: "YOUR_LIFF_ID" }); // ← あなたの LIFF ID をここに挿入
+      await liff.init({ liffId: "YOUR_LIFF_ID" });
     }
     main();
 
-    // 計算ロジック
     const capacitySelect = document.getElementById('capacity');
     const pressureInput = document.getElementById('pressure');
     const flowRateInput = document.getElementById('flowRate');
@@ -79,28 +148,60 @@
       calculateTime();
     }
 
-   function calculateTime() {
-  const flowRate = parseFloat(flowRateInput.value);
+    function calculateTime() {
+      const flowRate = parseFloat(flowRateInput.value);
 
-  if (!isNaN(flowRate) && flowRate > 0 && oxygenVolume > 0) {
-    const timeInMinutes = oxygenVolume / flowRate;
-    const hours = Math.floor(timeInMinutes / 60);
-    const minutes = Math.floor(timeInMinutes % 60);
+      if (!isNaN(flowRate) && flowRate > 0 && oxygenVolume > 0) {
+        const timeInMinutes = oxygenVolume / flowRate;
+        const hours = Math.floor(timeInMinutes / 60);
+        const minutes = Math.floor(timeInMinutes % 60);
+        const total = Math.floor(timeInMinutes);
+        let timeString = "";
+        if (hours > 0) timeString += `${hours} 時間 `;
+        timeString += `${minutes} 分（${total} 分）`;
 
-    const total = Math.floor(timeInMinutes);  // 小数切り捨てで合計分表示
-    let timeString = "";
-    if (hours > 0) timeString += `${hours} 時間 `;
-    timeString += `${minutes} 分（${total} 分）`;
-
-    timeResult.textContent = `使用可能時間: ${timeString}`;
-  } else {
-    timeResult.textContent = "使用可能時間: -";
-  }
-}
+        timeResult.textContent = `使用可能時間: ${timeString}`;
+      } else {
+        timeResult.textContent = "使用可能時間: -";
+      }
+    }
 
     capacitySelect.addEventListener('change', calculateOxygenVolume);
     pressureInput.addEventListener('input', calculateOxygenVolume);
     flowRateInput.addEventListener('input', calculateTime);
+
+    function sendDataToSheet() {
+      const capacity = parseFloat(capacitySelect.value);
+      const pressure = parseFloat(pressureInput.value);
+      const flowRate = parseFloat(flowRateInput.value);
+
+      if (oxygenVolume === 0 || isNaN(flowRate)) return;
+
+      const time = oxygenVolume / flowRate;
+
+      const data = {
+        capacity,
+        pressure,
+        flowRate,
+        oxygenVolume: parseFloat(oxygenVolume.toFixed(2)),
+        time: parseFloat(time.toFixed(2))
+      };
+
+      fetch("https://script.google.com/macros/s/XXXXXX/exec", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+      })
+        .then(res => res.json())
+        .then(response => {
+          console.log("Success:", response);
+          alert("スプレッドシートに保存しました！");
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("送信エラーが発生しました。");
+        });
+    }
   </script>
 </body>
 </html>
